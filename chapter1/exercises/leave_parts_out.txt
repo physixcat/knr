@@ -1,0 +1,28 @@
+/*
+ * ===========================================================================
+ *
+ *     THE C PROGRAMMING LANGUAGE (2ED) | BRIAN KERNIGHAN & DENNIS RITCHIE
+ *                     Chapter 1 - A Tutorial Introduction
+ *
+ * 1.1 Getting Started
+ *
+ *      Exercise 1-01:
+ *
+ *      Run the "hello, world" program on your system. Experiment with leaving
+ *      out parts of the program, to see what error messages you get.
+ *
+ * ===========================================================================
+ */
+
+#include <stdio.h>
+
+main()
+{
+	printf("hello, world\n");
+}
+
+/*
+ * error: return type defaults to ‘int’ [-Werror=return-type]
+ * error: function declaration isn't a prototype [-Werror=strict-prototypes]
+ * error: control reaches end of non-void function [-Werror=return-type]
+ */
