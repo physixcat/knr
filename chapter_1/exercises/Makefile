@@ -13,8 +13,8 @@ CFLAGS = -Werror -Wall -Wextra -Wpedantic -Wformat=2 -Wformat-overflow=2 \
 CC = gcc
 VPATH = src
 
-bin_detab_modulo_custom : detab_modulo_custom.c
+bin_wrap_line : wrap_line.c
 	$(CC) $(CFLAGS) $? -o $@
 
 clean :
-	rm bin_detab_modulo_custom
+	rm bin_wrap_line
