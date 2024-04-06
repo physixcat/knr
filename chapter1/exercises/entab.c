@@ -22,5 +22,38 @@
 
 int main (void)
 {
+	int c;
+
+	int delta = TABSTOP;
+	int cb = 0;
+
+	printf("|======|=======|=======|"
+	       "\n\n");
+
+	while ((c=getchar()) != EOF) {
+		if (c != ' ' && cb > 0) {
+			if (delta == 8) {
+				printf("%d", '\t');
+				cb = 0;
+			} else {
+				while (cb > 0) {
+					putchar(' ');
+					--cb;
+				}
+			}
+		}
+
+		if (c != ' ' && cb == 0)
+			putchar(c);
+
+		if (c == ' ')
+			++cb;
+
+		--delta;
+
+		if (delta == 0 || c == '\n')
+			delta = TABSTOP;
+	}
+
 	return 0;
 }
