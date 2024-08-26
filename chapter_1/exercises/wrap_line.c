@@ -121,7 +121,7 @@ int main(void)
 	int prefer_verbose = PREFER_VERBOSE;
 	char word[LONGEST_WORD] = "";
 #if STRING_BAKED_IN
-	char c[] = "\tLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
+	unsigned char c[] = "\tLorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod "
 		   "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, "
 		   "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo "
 		   "consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse "
