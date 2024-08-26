@@ -55,7 +55,6 @@
 #include <stdio.h>
 
 #define ASCII_EXT_FLOOR 128
-#define ASCII_EXT_UPPER 255
 #define ASCII_FLOOR     33
 #define ASCII_UPPER     126
 #define COLUMN_MIN      2
@@ -189,7 +188,11 @@ int main(void)
 			printf("Error: single word cannot be longer than %d characters. "
 			"Bailing out.\n", LONGEST_WORD);
 			return 1;
-		} else if (c >= ASCII_EXT_FLOOR && c <= ASCII_EXT_UPPER) {
+#if STRING_BAKED_IN
+		} else if (c[i] >= ASCII_EXT_FLOOR) {
+#else
+		} else if (c >= ASCII_EXT_FLOOR) {
+#endif
 			printf("Error: extended ASCII is not supported. Bailing out.\n");
 			return 1;
 		} else {
