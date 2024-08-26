@@ -54,8 +54,8 @@
 
 #include <stdio.h>
 
-#define ASCII_EXT_FLOOR 128
-#define ASCII_FLOOR     33
+#define ASCII_EXT_LOWER 128
+#define ASCII_LOWER     33
 #define ASCII_UPPER     126
 #define COLUMN_MIN      2
 #define LONGEST_WORD    34
@@ -174,11 +174,11 @@ int main(void)
 #if STRING_BAKED_IN
 	#define ARRAY_SIZE(x)   (sizeof(x) / sizeof((x)[0]))
 	for (i = 0; i < (int)ARRAY_SIZE(c); ++i) {
-		if (c[i] >= ASCII_FLOOR && c[i] <= ASCII_UPPER && letter < LONGEST_WORD) {
+		if (c[i] >= ASCII_LOWER && c[i] <= ASCII_UPPER && letter < LONGEST_WORD) {
 			word[letter] = (char)c[i];
 #else
 	while ((c = getchar()) != EOF) {
-		if (c >= ASCII_FLOOR && c <= ASCII_UPPER && letter < LONGEST_WORD) {
+		if (c >= ASCII_LOWER && c <= ASCII_UPPER && letter < LONGEST_WORD) {
 			word[letter] = (char)c;
 #endif
 			++letter;
@@ -189,9 +189,9 @@ int main(void)
 			"Bailing out.\n", LONGEST_WORD);
 			return 1;
 #if STRING_BAKED_IN
-		} else if (c[i] >= ASCII_EXT_FLOOR) {
+		} else if (c[i] >= ASCII_EXT_LOWER) {
 #else
-		} else if (c >= ASCII_EXT_FLOOR) {
+		} else if (c >= ASCII_EXT_LOWER) {
 #endif
 			printf("Error: extended ASCII is not supported. Bailing out.\n");
 			return 1;
