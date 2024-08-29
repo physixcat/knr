@@ -58,7 +58,7 @@
 #define ASCII_LOWER     33
 #define ASCII_UPPER     126
 #define COLUMN_MIN      2
-#define LONGEST_WORD    34
+#define LONGEST_WORD    35
 #define NO              0
 #define STRING_BAKED_IN NO
 #define TAB_STOP        8
