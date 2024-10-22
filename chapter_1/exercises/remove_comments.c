@@ -26,83 +26,68 @@
 
 #include <stdio.h>
 
-#define CHARACTER_LIMIT 100
+#define ASCII_EXT_LOWER 128
+#define ASCII_LOWER     33
+#define ASCII_UPPER     126
 #define NO 0
 #define YES 1
 
-void array_set(char array[], int count);
-void blank_print(char blank_sequence[CHARACTER_LIMIT], int blank_index);
-
 int main(void)
 {
-	char blank_sequence[CHARACTER_LIMIT] = "";
-	char line_buffer[CHARACTER_LIMIT] = "";
-	char word[CHARACTER_LIMIT] = "";
-	int blank_index = 0;
-	int line_has_code = NO;
-	int multiline_detected = NO;
-
 	int c;
-	int i = 0;
+	int c_previous = 0;
+	/* int c_previous_previous = 0; */
 	int inside_comment = NO;
 	int inside_string = NO;
-	int quiet_risk = NO;
-	int yapping_risk = NO;
-	int escaping_character = NO;
+	int line_has_code = NO;
+	/*
+	 * Since 'break' is not covered in Chapter 1, this variable's job is
+	 */
+	int will_print_c = NO;
 
 	while ((c = getchar()) != EOF) {
-		if (c == '/' && !inside_comment) {
-			yapping_risk = YES;
+		if (inside_string) {
+			if (c == '"') {
+				inside_string = NO;
+			}
+			will_print_c = YES;
+			line_has_code = YES;
+		} else {
+			if (inside_comment) {
+				if (c == '/' && c_previous == '*') {
+					inside_comment = NO;
+				}
+			} else {
+				if (c == '*' && c_previous == '/') {
+					inside_comment = YES;
+				} else {
+					if (c == '\n' && line_has_code) {
+						will_print_c = YES;
+						line_has_code = YES;
+					}
+					if (c <= ASCII_UPPER && c >= ASCII_LOWER && c != '/') {
+						if (c_previous == ' ' || c_previous == '\t' ||
+						    c_previous == '/') {
+							putchar(c_previous);
+						}
+						if (c == '"') {
+							inside_string = YES;
+						}
+						will_print_c = YES;
+						line_has_code = YES;
+					}
+				}
+			}
 		}
-		if (c == '*' && yapping_risk) {
-			inside_comment = YES;
-			yapping_risk = NO;
-		} else if (c == '*') {
-			yapping_risk = NO;
-		}
-		if (c == '*' && inside_comment) {
-			quiet_risk = YES;
-		}
-		if (c == '/' && quiet_risk) {
-			inside_comment = NO;
-			quiet_risk = NO;
-		} else if (c == '/') {
-			quiet_risk = NO;
-		}
-		if (c == '"' && !escaping_character && !inside_string && !inside_comment) {
-			inside_string = YES;
-		}
-		if (c == '\\' && inside_string) {
-			inside_string = NO;
+
+		if (will_print_c) {
+			putchar(c);
+			will_print_c = NO;
 		}
 		if (c == '\n') {
+			line_has_code = NO;
 		}
-		line_buffer[i] = c;
-		++i;
+		c_previous = c;
 	}
-
 	return 0;
-}
-
-void array_set(char array[], int count)
-{
-	int i;
-
-	for (i = 0; i < count; ++i) {
-		array[i] = 0;
-	}
-}
-
-void blank_print(char blank_sequence[CHARACTER_LIMIT], int blank_index)
-{
-	int i;
-
-	for (i = 0; i < blank_index; ++i) {
-		if (blank_sequence[i] == '\t') {
-			putchar('\t');
-		}
-		if (blank_sequence[i] == ' ') {
-			putchar(' ');
-		}
-	}
 }
