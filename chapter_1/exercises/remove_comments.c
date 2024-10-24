@@ -40,6 +40,7 @@ int main(void)
 	int inside_comment = NO;
 	int inside_string = NO;
 	int line_has_code = NO;
+	int line_has_comment = NO;
 	/*
 	 * Since 'break' is not covered in Chapter 1, this variable's job is
 	 */
@@ -60,10 +61,10 @@ int main(void)
 			} else {
 				if (c == '*' && c_previous == '/') {
 					inside_comment = YES;
+					line_has_comment = YES;
 				} else {
-					if (c == '\n' && line_has_code) {
+					if (c == '\n' && (line_has_code || !line_has_comment)) {
 						will_print_c = YES;
-						line_has_code = YES;
 					}
 					if (c <= ASCII_UPPER && c >= ASCII_LOWER && c != '/') {
 						if (c_previous == ' ' || c_previous == '\t' ||
@@ -86,8 +87,12 @@ int main(void)
 		}
 		if (c == '\n') {
 			line_has_code = NO;
+			line_has_comment = NO;
 		}
 		c_previous = c;
+	}
+	if (c_previous == '\n') {
+		putchar(c_previous);
 	}
 	return 0;
 }
