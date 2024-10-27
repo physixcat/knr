@@ -36,6 +36,7 @@ int main(void)
 {
 	int c;
 	int c_previous = 0;
+	int c_before_slash = 0;
 	/* int c_previous_previous = 0; */
 	int inside_comment = NO;
 	int inside_string = NO;
@@ -54,45 +55,45 @@ int main(void)
 			will_print_c = YES;
 			line_has_code = YES;
 		} else {
+			if (c == '*' && c_previous == '/') {
+				inside_comment = YES;
+			}
 			if (inside_comment) {
 				if (c == '/' && c_previous == '*') {
 					inside_comment = NO;
+					line_has_comment = YES;
 				}
 			} else {
-				if (c == '*' && c_previous == '/') {
-					inside_comment = YES;
-					line_has_comment = YES;
-				} else {
-					if (c == '\n' && (line_has_code || !line_has_comment)) {
-						will_print_c = YES;
+				if (c_previous == '/' && c != '\n' && c > ASCII_UPPER && c < ASCII_LOWER) {
+					putchar(c_before_slash);
+					putchar(c_previous);
+				}
+				if (c == '/') {
+					c_before_slash = c_previous;
+				} else if (c == '\n' && (line_has_code || !line_has_comment)) {
+					will_print_c = YES;
+				} else if (c <= ASCII_UPPER && c >= ASCII_LOWER) {
+					if (c_previous == ' ' || c_previous == '\t') {
+						putchar(c_previous);
 					}
-					if (c <= ASCII_UPPER && c >= ASCII_LOWER && c != '/') {
-						if (c_previous == ' ' || c_previous == '\t' ||
-						    c_previous == '/') {
-							putchar(c_previous);
-						}
-						if (c == '"') {
-							inside_string = YES;
-						}
-						will_print_c = YES;
-						line_has_code = YES;
+					if (c == '"') {
+						inside_string = YES;
 					}
+					will_print_c = YES;
+					line_has_code = YES;
 				}
 			}
 		}
 
 		if (will_print_c) {
 			putchar(c);
-			will_print_c = NO;
 		}
 		if (c == '\n') {
 			line_has_code = NO;
 			line_has_comment = NO;
 		}
+		will_print_c = NO;
 		c_previous = c;
-	}
-	if (c_previous == '\n') {
-		putchar(c_previous);
 	}
 	return 0;
 }
