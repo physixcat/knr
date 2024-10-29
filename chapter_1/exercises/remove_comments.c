@@ -29,71 +29,96 @@
 #define ASCII_EXT_LOWER 128
 #define ASCII_LOWER     33
 #define ASCII_UPPER     126
-#define NO 0
-#define YES 1
+#define NO              0
+#define YES             1
+
+int c_previous = 0;
+int c_before_slash = 0;
+int inside_comment = NO;
+int inside_string = NO;
+int line_has_code = NO;
+int line_has_comment = NO;
+
+void process_character(int c);
+void process_code(int c);
+void process_non_string(int c);
 
 int main(void)
 {
 	int c;
-	int c_previous = 0;
-	int c_before_slash = 0;
-	/* int c_previous_previous = 0; */
-	int inside_comment = NO;
-	int inside_string = NO;
-	int line_has_code = NO;
-	int line_has_comment = NO;
-	/*
-	 * Since 'break' is not covered in Chapter 1, this variable's job is
-	 */
-	int will_print_c = NO;
 
 	while ((c = getchar()) != EOF) {
-		if (inside_string) {
-			if (c == '"') {
-				inside_string = NO;
+		process_character(c);
+	}
+
+	return 0;
+}
+
+void process_character(int c)
+{
+	if (!inside_string) {
+		process_non_string(c);
+	} else {
+		putchar(c);
+		line_has_code = YES;
+
+		if (c == '"') {
+			inside_string = NO;
+		}
+	}
+
+	if (c == '\n') {
+		line_has_code = NO;
+		line_has_comment = NO;
+	}
+
+	c_previous = c;
+}
+
+void process_non_string(int c)
+{
+	if (!inside_comment) {
+		if (c_previous == '/' && c != '\n' && c != '*') {
+			/* printf("$"); */
+			if (c_before_slash == ' ') {
+				putchar(c_before_slash);
 			}
-			will_print_c = YES;
-			line_has_code = YES;
-		} else {
-			if (c == '*' && c_previous == '/') {
-				inside_comment = YES;
-			}
-			if (inside_comment) {
-				if (c == '/' && c_previous == '*') {
-					inside_comment = NO;
-					line_has_comment = YES;
-				}
-			} else {
-				if (c_previous == '/' && c != '\n' && c > ASCII_UPPER && c < ASCII_LOWER) {
-					putchar(c_before_slash);
-					putchar(c_previous);
-				}
-				if (c == '/') {
-					c_before_slash = c_previous;
-				} else if (c == '\n' && (line_has_code || !line_has_comment)) {
-					will_print_c = YES;
-				} else if (c <= ASCII_UPPER && c >= ASCII_LOWER) {
-					if (c_previous == ' ' || c_previous == '\t') {
-						putchar(c_previous);
-					}
-					if (c == '"') {
-						inside_string = YES;
-					}
-					will_print_c = YES;
-					line_has_code = YES;
-				}
-			}
+			putchar(c_previous);
 		}
 
-		if (will_print_c) {
+		if (c == '/') {
+			/* printf("^"); */
+			c_before_slash = c_previous;
+		} else if (c == '*' && c_previous == '/') {
+			inside_comment = YES;
+		} else if (c == '\n' && (line_has_code || !line_has_comment)) {
+			/* printf("%%"); */
 			putchar(c);
+		} else if (c <= ASCII_UPPER && c >= ASCII_LOWER) {
+			/* printf("&"); */
+			process_code(c);
 		}
-		if (c == '\n') {
-			line_has_code = NO;
-			line_has_comment = NO;
+	} else {
+		if (c == '/' && c_previous == '*') {
+			/* printf("#"); */
+			inside_comment = NO;
+			line_has_comment = YES;
 		}
-		will_print_c = NO;
-		c_previous = c;
 	}
-	return 0;
+}
+
+void process_code(int c)
+{
+	if (c_previous == ' ' || c_previous == '\t') {
+		/* printf("!"); */
+		putchar(c_previous);
+	}
+
+	if (c == '"') {
+		inside_string = YES;
+	}
+
+	/* printf("?"); */
+	putchar(c);
+	line_has_code = YES;
 }
