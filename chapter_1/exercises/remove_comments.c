@@ -36,12 +36,19 @@ int c_previous = 0;
 int c_before_slash = 0;
 int inside_comment = NO;
 int inside_string = NO;
+int inside_char = NO;
+int just_left_comment = NO;
 int line_has_code = NO;
 int line_has_comment = NO;
+int indentation_type = 0;
+int indent_tabs = 0;
+int indent_spaces = 0;
 
+void handle_previous_slash(int c);
 void process_character(int c);
 void process_code(int c);
-void process_non_string(int c);
+void process_non_quoted(int c);
+void print_indentation(void);
 
 int main(void)
 {
@@ -54,71 +61,132 @@ int main(void)
 	return 0;
 }
 
+void handle_previous_slash(int c)
+{
+	if (c == '*') {
+		inside_comment = YES;
+		line_has_comment = YES;
+	} else {
+		if (c != '\n' && !just_left_comment) {
+			if (c_before_slash == ' ') {
+/*ALERT ALERT NESTING TOO DEEP*/
+				putchar(c_before_slash);
+				c_before_slash = 0;
+			}
+			putchar(c_previous);
+			c_previous = 0;
+		}
+	}
+}
+
 void process_character(int c)
 {
-	if (!inside_string) {
-		process_non_string(c);
+	if (!inside_string && !inside_char) {
+		/* handling a previous slash may change the state */
+		if (c_previous == '/' && !inside_comment) {
+			handle_previous_slash(c);
+		}
+		process_non_quoted(c);
 	} else {
 		putchar(c);
 		line_has_code = YES;
-
+		if (c == '\\') {
+			c_before_slash = c_previous;
+		}
+		if (c == '\'' && (c_previous != '\\' || (c_previous == '\\' &&
+                                                         c_before_slash ==
+                                                         '\\'))) {
+			inside_char = NO;
+		}
+		/* TODO: handle escaped double quote */
 		if (c == '"') {
 			inside_string = NO;
 		}
 	}
 
+	/* don't do this for every char pls */
+	if (!line_has_code) {
+		if (c == '\t') {
+			indent_tabs += 1;
+		}
+		if (c == ' ') {
+			indent_spaces += 1;
+		}
+	}
+
+	if (line_has_code) {
+		indent_tabs = 0;
+		indent_spaces = 0;
+	}
+
 	if (c == '\n') {
 		line_has_code = NO;
 		line_has_comment = NO;
+		c_before_slash = 0;
+		indent_tabs = 0;
+		indent_spaces = 0;
 	}
 
 	c_previous = c;
 }
 
-void process_non_string(int c)
-{
-	if (!inside_comment) {
-		if (c_previous == '/' && c != '\n' && c != '*') {
-			/* printf("$"); */
-			if (c_before_slash == ' ') {
-				putchar(c_before_slash);
-			}
-			putchar(c_previous);
-		}
-
-		if (c == '/') {
-			/* printf("^"); */
-			c_before_slash = c_previous;
-		} else if (c == '*' && c_previous == '/') {
-			inside_comment = YES;
-		} else if (c == '\n' && (line_has_code || !line_has_comment)) {
-			/* printf("%%"); */
-			putchar(c);
-		} else if (c <= ASCII_UPPER && c >= ASCII_LOWER) {
-			/* printf("&"); */
-			process_code(c);
-		}
-	} else {
-		if (c == '/' && c_previous == '*') {
-			/* printf("#"); */
-			inside_comment = NO;
-			line_has_comment = YES;
-		}
-	}
-}
-
 void process_code(int c)
 {
-	if (c_previous == ' ' || c_previous == '\t') {
-		/* printf("!"); */
+	if (indent_spaces || indent_tabs) {
+		print_indentation();
+	}
+
+	if (line_has_code && (c_previous == ' ' || c_previous == '\t')) {
 		putchar(c_previous);
+		c_previous = 0;
+	}
+
+	if (c == '\'') {
+		inside_char = YES;
 	}
 
 	if (c == '"') {
 		inside_string = YES;
 	}
 
-	/* printf("?"); */
 	putchar(c);
 	line_has_code = YES;
+	just_left_comment = NO;
+}
+
+void process_non_quoted(int c)
+{
+	if (!inside_comment) {
+		if (c == '/') {
+			c_before_slash = c_previous;
+		}
+
+		if (c == '\n' && (line_has_code || !line_has_comment)) {
+			putchar(c);
+		}
+
+		if (c <= ASCII_UPPER && c >= ASCII_LOWER && c != '/') {
+			process_code(c);
+		}
+
+	} else {
+		if (c == '/' && c_previous == '*') {
+			inside_comment = NO;
+			just_left_comment = YES;
+			line_has_comment = YES;
+			indent_spaces = 0;
+		}
+	}
+}
+
+void print_indentation(void)
+{
+	int i = 0;
+
+	for (i = 0; i < indent_tabs; ++i) {
+		putchar('\t');
+	}
+	for (i = 0; i < indent_spaces; ++i) {
+		putchar(' ');
+	}
 }
