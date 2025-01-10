@@ -32,161 +32,128 @@
 #define NO              0
 #define YES             1
 
-int c_previous = 0;
 int c_before_slash = 0;
-int inside_comment = NO;
-int inside_string = NO;
+int c_previous = 0;
 int inside_char = NO;
+int inside_string = NO;
 int just_left_comment = NO;
 int line_has_code = NO;
-int line_has_comment = NO;
-int indentation_type = 0;
-int indent_tabs = 0;
-int indent_spaces = 0;
 
-void handle_previous_slash(int c);
-void process_character(int c);
-void process_code(int c);
-void process_non_quoted(int c);
-void print_indentation(void);
+void process_non_comment(int c, int line_has_comment, int indent_tabs, int indent_spaces);
 
 int main(void)
 {
 	int c;
+	int indent_spaces = 0;
+	int indent_tabs = 0;
+	int inside_comment = NO;
+	int line_has_comment = NO;
 
 	while ((c = getchar()) != EOF) {
-		process_character(c);
+		if (!inside_string && !inside_char) {
+			if (!inside_comment) {
+				/*
+				 * handling a previous slash may change the
+				 * state
+				 */
+				if (c_previous == '/') {
+					if (c == '*') {
+						inside_comment = YES;
+						line_has_comment = YES;
+					} else {
+						if (c != '\n' && !just_left_comment) {
+							if (c_before_slash == ' ') {
+								putchar(c_before_slash);
+								c_before_slash = 0;
+							}
+							putchar(c_previous);
+							c_previous = 0;
+						}
+						process_non_comment(c, line_has_comment,
+						                    indent_tabs, indent_spaces);
+					}
+				} else {
+					process_non_comment(c, line_has_comment, indent_tabs,
+					                    indent_spaces);
+				}
+			} else if (c == '/' && c_previous == '*') {
+				inside_comment = NO;
+				just_left_comment = YES;
+				line_has_comment = YES;
+				indent_spaces = 0;
+			}
+		} else {
+			putchar(c);
+			line_has_code = YES;
+			if (c == '\\') {
+				c_before_slash = c_previous;
+			} else if (c == '\'' && (c_previous != '\\' || (c_previous == '\\' &&
+			                                         c_before_slash == '\\'))) {
+				inside_char = NO;
+			} else if (c == '"') {
+				/* TODO: handle escaped double quote */
+				inside_string = NO;
+			}
+		}
+
+		if (!line_has_code) {
+			if (c == '\t') {
+				indent_tabs += 1;
+			}
+			if (c == ' ') {
+				indent_spaces += 1;
+			}
+		}
+
+		if (c == '\n') {
+			line_has_code = NO;
+			line_has_comment = NO;
+			c_before_slash = 0;
+			indent_tabs = 0;
+			indent_spaces = 0;
+		}
+
+		c_previous = c;
 	}
 
 	return 0;
 }
 
-void handle_previous_slash(int c)
-{
-	if (c == '*') {
-		inside_comment = YES;
-		line_has_comment = YES;
-	} else {
-		if (c != '\n' && !just_left_comment) {
-			if (c_before_slash == ' ') {
-/*ALERT ALERT NESTING TOO DEEP*/
-				putchar(c_before_slash);
-				c_before_slash = 0;
-			}
-			putchar(c_previous);
-			c_previous = 0;
-		}
-	}
-}
-
-void process_character(int c)
-{
-	if (!inside_string && !inside_char) {
-		/* handling a previous slash may change the state */
-		if (c_previous == '/' && !inside_comment) {
-			handle_previous_slash(c);
-		}
-		process_non_quoted(c);
-	} else {
-		putchar(c);
-		line_has_code = YES;
-		if (c == '\\') {
-			c_before_slash = c_previous;
-		}
-		if (c == '\'' && (c_previous != '\\' || (c_previous == '\\' &&
-                                                         c_before_slash ==
-                                                         '\\'))) {
-			inside_char = NO;
-		}
-		/* TODO: handle escaped double quote */
-		if (c == '"') {
-			inside_string = NO;
-		}
-	}
-
-	/* don't do this for every char pls */
-	if (!line_has_code) {
-		if (c == '\t') {
-			indent_tabs += 1;
-		}
-		if (c == ' ') {
-			indent_spaces += 1;
-		}
-	}
-
-	if (line_has_code) {
-		indent_tabs = 0;
-		indent_spaces = 0;
-	}
-
-	if (c == '\n') {
-		line_has_code = NO;
-		line_has_comment = NO;
-		c_before_slash = 0;
-		indent_tabs = 0;
-		indent_spaces = 0;
-	}
-
-	c_previous = c;
-}
-
-void process_code(int c)
-{
-	if (indent_spaces || indent_tabs) {
-		print_indentation();
-	}
-
-	if (line_has_code && (c_previous == ' ' || c_previous == '\t')) {
-		putchar(c_previous);
-		c_previous = 0;
-	}
-
-	if (c == '\'') {
-		inside_char = YES;
-	}
-
-	if (c == '"') {
-		inside_string = YES;
-	}
-
-	putchar(c);
-	line_has_code = YES;
-	just_left_comment = NO;
-}
-
-void process_non_quoted(int c)
-{
-	if (!inside_comment) {
-		if (c == '/') {
-			c_before_slash = c_previous;
-		}
-
-		if (c == '\n' && (line_has_code || !line_has_comment)) {
-			putchar(c);
-		}
-
-		if (c <= ASCII_UPPER && c >= ASCII_LOWER && c != '/') {
-			process_code(c);
-		}
-
-	} else {
-		if (c == '/' && c_previous == '*') {
-			inside_comment = NO;
-			just_left_comment = YES;
-			line_has_comment = YES;
-			indent_spaces = 0;
-		}
-	}
-}
-
-void print_indentation(void)
+void process_non_comment(int c, int line_has_comment, int indent_tabs, int indent_spaces)
 {
 	int i = 0;
 
-	for (i = 0; i < indent_tabs; ++i) {
-		putchar('\t');
-	}
-	for (i = 0; i < indent_spaces; ++i) {
-		putchar(' ');
+	if (c == '/') {
+		c_before_slash = c_previous;
+	} else if (c == '\n' && (line_has_code || !line_has_comment)) {
+		putchar(c);
+	} else if (c <= ASCII_UPPER && c >= ASCII_LOWER && c != '/') {
+		/*
+		 * should this delete lines that have indents and nothing else?
+		 * because that's the current behavior
+		 */
+		if ((indent_spaces || indent_tabs) && !line_has_code) {
+			for (i = 0; i < indent_tabs; ++i) {
+				putchar('\t');
+			}
+			for (i = 0; i < indent_spaces; ++i) {
+				putchar(' ');
+			}
+		}
+
+		if (line_has_code && (c_previous == ' ' || c_previous == '\t')) {
+			putchar(c_previous);
+			c_previous = 0;
+		}
+
+		if (c == '\'') {
+			inside_char = YES;
+		} else if (c == '"') {
+			inside_string = YES;
+		}
+
+		putchar(c);
+		line_has_code = YES;
+		just_left_comment = NO;
 	}
 }
