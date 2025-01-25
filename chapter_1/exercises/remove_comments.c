@@ -52,10 +52,6 @@ int main(void)
 	while ((c = getchar()) != EOF) {
 		if (!inside_string && !inside_char) {
 			if (!inside_comment) {
-				/*
-				 * handling a previous slash may change the
-				 * state
-				 */
 				if (c_previous == '/') {
 					if (c == '*') {
 						inside_comment = YES;
@@ -90,8 +86,7 @@ int main(void)
 			} else if (c == '\'' && (c_previous != '\\' || (c_previous == '\\' &&
 			                                         c_before_slash == '\\'))) {
 				inside_char = NO;
-			} else if (c == '"') {
-				/* TODO: handle escaped double quote */
+			} else if (c == '"' && c_previous != '\\') {
 				inside_string = NO;
 			}
 		}
@@ -107,7 +102,9 @@ int main(void)
 
 		if (c == '\n') {
 			line_has_code = NO;
-			line_has_comment = NO;
+			if (!inside_comment) {
+				line_has_comment = NO;
+			}
 			c_before_slash = 0;
 			indent_tabs = 0;
 			indent_spaces = 0;
@@ -128,10 +125,6 @@ void process_non_comment(int c, int line_has_comment, int indent_tabs, int inden
 	} else if (c == '\n' && (line_has_code || !line_has_comment)) {
 		putchar(c);
 	} else if (c <= ASCII_UPPER && c >= ASCII_LOWER && c != '/') {
-		/*
-		 * should this delete lines that have indents and nothing else?
-		 * because that's the current behavior
-		 */
 		if ((indent_spaces || indent_tabs) && !line_has_code) {
 			for (i = 0; i < indent_tabs; ++i) {
 				putchar('\t');
