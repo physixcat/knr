@@ -12,11 +12,11 @@ CFLAGS = -Werror -Wall -Wextra -Wpedantic -Wformat=2 -Wformat-overflow=2 \
 # BIN =
 VPATH = src
 
-bin_wrap_line : wrap_line.c
+bin_remove_comments : remove_comments.c
 	$(CC) $(CFLAGS) $? -o $@
 
 clean :
-	rm bin_wrap_line
+	rm bin_remove_comments
 
 # all : $(BIN)
 
